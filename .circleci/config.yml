@@ -4,19 +4,52 @@ orbs:
   maven: circleci/maven@0.0.12
 
 workflows:
-  maven_test:
+  version: 2
+  build-deploy:
     jobs:
-      - maven/test:
-          command: 'verify'
-          steps:
-            - run:
-                name: Save test results
-                command: |
-                  mkdir -p ~/test-results/junit/
-                  find . -type f -regex ".*/target/surefire-reports/.*xml" -exec cp {} ~/test-results/junit/ \;
-                when: always
-            - store_test_results:
-                path: ~/test-results
-            - store_artifacts:
-                path: ~/test-results/junit
+      - unit-test
+
+jobs:
+  unit-test:
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - test-{{ checksum "pom.xml" }}
+            - test
+      - run: mvn verify
+      - run:
+          name: Build and unit test
+          command: |
+            mvn test -B \
+              -Dbuild.number=${CIRCLE_BUILD_NUM} \
+              -Dcommit.hash=${CIRCLE_SHA1} \
+              -Dcircle.workflow.guid=${CIRCLE_WORKFLOW_ID} \
+              -Dbuild.user=${CIRCLE_PROJECT_USERNAME} \
+              -Dbuild.repo=${CIRCLE_PROJECT_REPONAME}
+      - save_cache:
+          paths:
+            - ~/.m2
+          key: test-{{ checksum "pom.xml" }}
+      - store_test_results:
+          path: target/surefire-reports
+
+
+#workflows:
+#  maven_test:
+#    jobs:
+#      - maven/test:
+#          command: 'verify'
+
+#          steps:
+#            - run:
+#                name: Save test results
+#                command: |
+#                  mkdir -p ~/test-results/junit/
+#                  find . -type f -regex ".*/target/surefire-reports/.*xml" -exec cp {} ~/test-results/junit/ \;
+#                when: always
+#            - store_test_results:
+#                path: ~/test-results
+#            - store_artifacts:
+#                path: ~/test-results/junit
 
