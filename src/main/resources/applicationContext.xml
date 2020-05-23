@@ -11,4 +11,13 @@
     <context:property-placeholder ignore-resource-not-found="true" ignore-unresolvable="true"/>
     <context:component-scan base-package="com.ohpen.qa"/>
 
+
+    <bean id="github" class="com.ohpen.qa.github.GitHubClient">
+        <property name="url" value="https://api.github.com"/>
+        <property name="port" value="443"/>
+        <property name="user" value="${#{systemProperties['github.user']}?:alexandru.giurovici@outlook.com}"/>
+        <property name="pass" value="${#{systemProperties['github.password']}?:x}"/>
+    </bean>
+
+
 </beans>

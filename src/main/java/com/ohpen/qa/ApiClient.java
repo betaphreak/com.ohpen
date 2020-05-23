@@ -4,11 +4,13 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
+import org.apache.http.HttpResponse;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.*;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
@@ -32,6 +34,8 @@ import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static java.lang.Thread.sleep;
@@ -178,12 +182,6 @@ public class ApiClient {
 
             return httpClientBuilder.build();
         }
-    }
-
-    // for wget that is not part of ApiClient
-    public String getCredentials()
-    {
-        return credentials;
     }
 
     protected void buildHeader(HttpRequestBase x)
@@ -430,24 +428,260 @@ public class ApiClient {
         return null;
     }
 
+    protected String getItem(String urlPart)
+    {
+        HttpGet get = buildGetHeader(executionEnv + "/" + urlPart);
+        Optional<String> result = execute(get);
+        return result.orElse(null);
+    }
+
+    protected <T> T getItem(String urlPart, Class<T> t)
+    {
+        HttpGet get = buildGetHeader(executionEnv + "/" + urlPart);
+        return execute(get).map(result -> {
+            try {
+                return mapper.readValue(result, t);
+            }
+            catch (IOException e) {
+                log.warn(e);
+                return null;
+            }
+            finally {
+                get.releaseConnection();
+            }
+        }).orElse(null);
+    }
+
+    protected <T> Optional<T> getOptionalItem(String urlPart, Class<T> t)
+    {
+        HttpGet get = buildGetHeader(executionEnv + "/" + urlPart);
+        return execute(get).flatMap(result -> {
+            try {
+                return Optional.of(mapper.readValue(result, t));
+            } catch (IOException e) {
+                log.error(e);
+                return Optional.empty();
+            }
+            finally {
+                get.releaseConnection();
+            }
+        });
+    }
+
+    protected <T> T getItem(String urlPart, String payload, Class<T> t)
+    {
+        HttpPost post = buildPostHeader(executionEnv + "/" + urlPart, payload);
+        return execute(post).map(result -> {
+            try {
+                return mapper.readValue(result, t);
+            } catch (IOException e) {
+                log.error("Invalid item of type " + t.getName() + " -> " + payload);
+                log.error(e);
+                return null;
+            }
+            finally {
+                post.releaseConnection();
+            }
+        }).orElse(null);
+    }
+
+    protected <T,K> T getItem(String urlPart, K payload, Class<T> t)
+    {
+        try {
+            return getItem(urlPart, mapper.writeValueAsString(payload), t);
+        } catch (JsonProcessingException e) {
+            log.error(e);
+            return null;
+        }
+    }
+
+    protected <T> List<T>
+    getList(String urlPart, Class<T> t)
+    {
+        HttpGet get = buildGetHeader(executionEnv + "/" + urlPart);
+        Optional<String> request = execute(get);
+        List<T> result = Collections.emptyList();
+        if (request.isPresent())
+        {
+            try {
+                result = mapper.readValue(request.get(), mapper.getTypeFactory().constructCollectionType(List.class, t));
+            } catch (IOException e) {
+                log.error(e);
+            }
+        }
+        return result;
+    }
+
+    <T> List<T> getList(String urlPart, String payload, Class<T> t)
+    {
+        HttpPost post = buildPostHeader(executionEnv + "/" + urlPart, payload);
+        Optional<String> request = execute(post);
+        List<T> result = Collections.emptyList();
+        if (request.isPresent())
+        {
+            try {
+                result = mapper.readValue(request.get(), mapper.getTypeFactory().constructCollectionType(List.class, t));
+            } catch (IOException e) {
+                log.error(e);
+            }
+        }
+        return result;
+    }
+
+    <T,K> List<T> getList(String urlPart, K payload, Class<T> t)
+    {
+        try {
+            return getList(urlPart, mapper.writeValueAsString(payload), t);
+        } catch (JsonProcessingException e) {
+            log.error(e);
+            return Collections.emptyList();
+        }
+    }
+
+
+    <T,K> K setItem(String urlPart, T payload, Class<K> k)
+    {
+        Optional<String> result = setItem(urlPart, payload);
+        if (result.isPresent())
+        {
+            try
+            {
+                return mapper.readValue(result.get(), k);
+            }
+            catch (Exception msg)
+            {
+                log.error(msg);
+            }
+        }
+        return null;
+    }
+    public <T> Optional<String> setItem(String urlPart, T payload)
+    {
+        HttpPost post;
+        try {
+            post = buildPostHeader(executionEnv + "/" + urlPart, mapper.writeValueAsString(payload));
+        } catch (JsonProcessingException e) {
+            log.error(e);
+            return Optional.empty();
+        }
+
+        try {
+            HttpResponse response = client.execute(post);
+            lastHttpCode = response.getStatusLine().getStatusCode();
+            if (lastHttpCode == 204)
+            {
+                return Optional.of("");
+            }
+            if (lastHttpCode / 100 == 2)
+            {
+                HttpEntity item = response.getEntity();
+                return getBody(item);
+            }
+        }
+        catch (IOException e) {
+            // TODO: handle errors from here properly and throw AssertionError/OperationNotSupported
+            log.error(e);
+        }
+        finally
+        {
+            post.releaseConnection();
+        }
+        return Optional.empty();
+    }
+
+    protected <T> Optional<String> putItem(String urlPart, T payload)
+    {
+        HttpPut put;
+        try {
+            put = buildPutHeader(executionEnv + "/" + urlPart, mapper.writeValueAsString(payload));
+        } catch (JsonProcessingException e) {
+            log.error(e);
+            return Optional.empty();
+        }
+
+        try {
+            HttpResponse response = client.execute(put);
+            lastHttpCode = response.getStatusLine().getStatusCode();
+            if (lastHttpCode == 204)
+            {
+                return Optional.of("");
+            }
+            if (lastHttpCode / 100 == 2)
+            {
+                HttpEntity item = response.getEntity();
+                return getBody(item);
+            }
+        }
+        catch (IOException e) {
+            log.error(e);
+        }
+        finally
+        {
+            put.releaseConnection();
+        }
+        return Optional.empty();
+    }
+
+    protected Optional<String> deleteItem(String urlPart)
+    {
+        HttpDelete delete = buildDeleteHeader(executionEnv + "/" + urlPart);
+
+        try {
+            HttpResponse response = client.execute(delete);
+            lastHttpCode = response.getStatusLine().getStatusCode();
+            if (lastHttpCode == 204)
+            {
+                return Optional.of("");
+            }
+            if (lastHttpCode / 100 == 2)
+            {
+                HttpEntity item = response.getEntity();
+                return getBody(item);
+            }
+        }
+        catch (IOException e) {
+            log.error(e);
+        }
+        finally
+        {
+            delete.releaseConnection();
+        }
+        return Optional.empty();
+    }
+
+
+    boolean set(String urlPart, String payload)
+    {
+        HttpPost post = buildPostHeader(executionEnv + "/" + urlPart, payload);
+        try {
+            HttpResponse response = client.execute(post);
+            lastHttpCode = response.getStatusLine().getStatusCode();
+            return lastHttpCode == 204;
+        }
+        catch (IOException e) {
+            log.error(e);
+        }
+        return false;
+    }
+
     static class KeepAlive implements X509TrustManager
     {
         private final X509TrustManager tm;
         X509Certificate[] chain;
-        private static Logger log = LogManager.getLogger(KeepAlive.class);
+        private static final Logger log = LogManager.getLogger(KeepAlive.class);
 
         KeepAlive(X509TrustManager tm) {
             this.tm = tm;
         }
 
         @Override
-        public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
-            //og.warn("Reconnecting client SSL using " + s);
+        public void checkClientTrusted(X509Certificate[] x509Certificates, String s) {
+            log.warn("Reconnecting client SSL using " + s);
         }
 
         @Override
         public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
-            //log.warn("Reconnecting server SSL using " + s);
+            log.warn("Reconnecting server SSL using " + s);
             this.chain = x509Certificates;
             tm.checkServerTrusted(chain, s);
         }
