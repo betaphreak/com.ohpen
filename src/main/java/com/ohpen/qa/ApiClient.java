@@ -112,10 +112,10 @@ public class ApiClient {
 
     private Boolean needsProxy;
     private HttpHost host;
-    private Integer connectTimeout = 60;
-    private Integer socketTimeout = 60;
-    private String keystore = "jssecacerts";
-    private String password = "changeit";
+    private final Integer connectTimeout = 60;
+    private final Integer socketTimeout = 60;
+    private final String keystore = "jssecacerts";
+    private final String password = "changeit";
 
     @PostConstruct
     public void init()
