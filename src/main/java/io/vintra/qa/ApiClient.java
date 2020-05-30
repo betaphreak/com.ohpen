@@ -191,10 +191,8 @@ public class ApiClient {
         x.addHeader("Content-Type", "application/json");
         x.addHeader("Access-Control-Allow-Origin", "*");
         x.addHeader("Connection", "keep-alive");
-        x.addHeader("Cache-Control", "no-cache");
-        x.addHeader("Pragma", "no-cache");
         if (credentials != null)
-            x.addHeader("Authorization", "Basic " + credentials);
+            x.addHeader("Authorization", credentials);
     }
 
     protected Optional<String> getBody(HttpEntity responseEntity) {

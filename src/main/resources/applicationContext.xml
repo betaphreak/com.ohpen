@@ -13,7 +13,7 @@
 
 
     <bean id="client" class="io.vintra.qa.server.TestClient">
-        <property name="url" value="https://api.github.com"/>
+        <property name="url" value="http://devlogicappportainer1.eastus2.azurecontainer.io"/>
         <property name="port" value="8000"/>
     </bean>
 
