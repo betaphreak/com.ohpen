@@ -1,10 +1,12 @@
 package io.vintra.qa.test;
 
+import io.vintra.qa.server.ContactDTO;
 import io.vintra.qa.server.LoginResponseDTO;
 import io.vintra.qa.server.TestClient;
 import io.vintra.qa.server.UserDTO;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -13,6 +15,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import javax.annotation.Resource;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 @ContextConfiguration(locations = "/applicationContext.xml")
@@ -35,4 +38,20 @@ public class ServerTest {
         UserDTO user = client.getCurrentUser();
         log.info(user.toString());
     }
+
+    @Test
+    public void con01Test()
+    {
+        ContactDTO contact = client.createContact();
+        log.info("Unique id: " + contact.getAdditionalProperties().get("id"));
+    }
+
+
+    @After
+    public void auth03()
+    {
+        client.logout();
+    }
+
+
 }

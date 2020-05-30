@@ -537,7 +537,7 @@ public class ApiClient {
     }
 
 
-    <T,K> K setItem(String urlPart, T payload, Class<K> k)
+    public <T,K> K setItem(String urlPart, T payload, Class<K> k)
     {
         Optional<String> result = setItem(urlPart, payload);
         if (result.isPresent())
@@ -566,11 +566,11 @@ public class ApiClient {
         try {
             HttpResponse response = client.execute(post);
             lastHttpCode = response.getStatusLine().getStatusCode();
-            if (lastHttpCode == 204)
+            if (lastHttpCode == 422)
             {
-                return Optional.of("");
+                log.info("Error ");
             }
-            if (lastHttpCode / 100 == 2)
+            if (lastHttpCode == 201)
             {
                 HttpEntity item = response.getEntity();
                 return getBody(item);
@@ -661,6 +661,12 @@ public class ApiClient {
         }
         return false;
     }
+
+    public int getLastHttpCode()
+    {
+        return lastHttpCode;
+    }
+
 
     static class KeepAlive implements X509TrustManager
     {

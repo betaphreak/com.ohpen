@@ -9,12 +9,12 @@
                             http://www.springframework.org/schema/context/spring-context-3.2.xsd">
 
     <context:property-placeholder ignore-resource-not-found="true" ignore-unresolvable="true"/>
-    <context:component-scan base-package="io.vintra.qa"/>
+    <context:component-scan base-package="io.vintra"/>
 
 
     <bean id="client" class="io.vintra.qa.server.TestClient">
-        <property name="url" value="http://devlogicappportainer1.eastus2.azurecontainer.io"/>
-        <property name="port" value="8000"/>
+        <property name="url" value="${#{systemProperties['test.endpoint']}?:http://devlogicappportainer1.eastus2.azurecontainer.io}"/>
+        <property name="port" value="${#{systemProperties['test.port']}?:8000}"/>
     </bean>
 
 

@@ -5,12 +5,12 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.blexr</groupId>
+    <groupId>io.vintra</groupId>
     <artifactId>qa</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <name>Ohpen QA Test</name>
+    <name>Vintra QA Test</name>
 
     <properties>
         <junit.version>4.12</junit.version>
@@ -18,22 +18,6 @@
         <spring.version>5.2.5.RELEASE</spring.version>
         <logging.version>2.12.1</logging.version>
     </properties>
-
-    <repositories>
-        <repository>
-            <id>atlassian-public</id>
-            <url>https://m2proxy.atlassian.com/repository/public</url>
-            <snapshots>
-                <enabled>true</enabled>
-                <updatePolicy>daily</updatePolicy>
-                <checksumPolicy>warn</checksumPolicy>
-            </snapshots>
-            <releases>
-                <enabled>true</enabled>
-                <checksumPolicy>warn</checksumPolicy>
-            </releases>
-        </repository>
-    </repositories>
 
     <dependencies>
 
@@ -166,6 +150,11 @@
             <version>2.6</version>
         </dependency>
 
+        <dependency>
+            <groupId>io.codearte.jfairy</groupId>
+            <artifactId>jfairy</artifactId>
+            <version>0.5.9</version>
+        </dependency>
 
         <!-- HTTP Clients -->
 
