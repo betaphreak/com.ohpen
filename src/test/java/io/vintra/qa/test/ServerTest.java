@@ -1,7 +1,7 @@
-package com.ohpen.qa.test;
+package io.vintra.qa.test;
 
-import com.ohpen.qa.github.GitHubClient;
-import com.ohpen.qa.github.UserDTO;
+import io.vintra.qa.server.TestClient;
+import io.vintra.qa.server.UserDTO;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.Test;
@@ -13,12 +13,12 @@ import javax.annotation.Resource;
 
 @ContextConfiguration(locations = "/applicationContext.xml")
 @RunWith(SpringJUnit4ClassRunner.class)
-public class GitHubTest
+public class ServerTest
 {
-    private static Logger log = LogManager.getLogger(GitHubTest.class);
+    private static Logger log = LogManager.getLogger(ServerTest.class);
 
     @Resource(name = "github")
-    private GitHubClient client;
+    private TestClient client;
 
     @Test
     public void GetUserTest()
@@ -27,12 +27,5 @@ public class GitHubTest
         UserDTO user = client.getUser("betaphreak");
         log.info(user.toString());
     }
-
-    @Test
-    public void PostStuffTest()
-    {
-
-    }
-
 
 }

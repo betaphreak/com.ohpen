@@ -1,4 +1,4 @@
-package com.ohpen.qa;
+package io.vintra.qa;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;

@@ -1,11 +1,11 @@
-package com.ohpen.qa.github;
+package io.vintra.qa.server;
 
-import com.ohpen.qa.ApiClient;
+import io.vintra.qa.ApiClient;
 import org.springframework.lang.Nullable;
 
 import static org.springframework.web.util.UriUtils.encode;
 
-public class GitHubClient extends ApiClient
+public class TestClient extends ApiClient
 {
     @Nullable
     public void setCredentials(String encoded)

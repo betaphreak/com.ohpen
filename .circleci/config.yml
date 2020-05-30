@@ -5,5 +5,16 @@ workflows:
   maven_test:
     jobs:
       - maven/test:
-          command: 'verify'
-          test_results_path: /path/to/test/results
+          command: 'test'
+          test_results_path: ~/test-results/junit
+
+#            - run
+#                name: Save test results
+#                command: |
+#                  mkdir -p ~/test-results/junit/
+#                  find . -type f -regex ".*/target/surefire-reports/.*xml" -exec cp {} ~/test-results/junit/ \;
+#                when: always
+#                  - store_test_results:
+#                      path: ~/test-results
+#                  - store_artifacts:
+#                      path: ~/test-results/junit
